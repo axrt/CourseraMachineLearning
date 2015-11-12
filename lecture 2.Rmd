@@ -2,7 +2,16 @@
 title: "Lecture 2"
 author: "Alexander Tuzhikov"
 date: "November 12, 2015"
-output: html_document
+output: 
+  html_document: 
+    fig_caption: yes
+    fig_height: 9
+    fig_width: 12
+    highlight: haddock
+    keep_md: yes
+    number_sections: yes
+    theme: cosmo
+    toc: yes
 ---
 
 #Caret functionality
@@ -21,7 +30,7 @@ output: html_document
     
 `caret` allows to unify the parameters for a wide variaty of predicting models.
 
-```{r}
+```{r, warning=FALSE}
 library(caret)
 library(kernlab)
 data(spam)
@@ -39,12 +48,70 @@ confusionMatrix(predictions, testing$type)
 
 #Data slicing
 
-```{r}
+```{r, warning=FALSE}
 set.seed(32323)
 folds<- createFolds(y=spam$type, k=10, list=TRUE, returnTrain=TRUE)
 sapply(folds, length)
 folds[[1]][1:10]
+set.seed(32323)
 folds<- createResample(y=spam$type, times=10, list=TRUE)
 sapply(folds, length)
 folds[[1]][1:10]
+set.seed(32323)
+tme<- 1:1e3
+folds<- createTimeSlices(y=tme, initialWindow = 20, horizon = 10) #horizon is the number of points you are going to be predicting
+names(folds)
+folds$train[[1]]
+folds$test[[1]]
 ```
+
+#Training options
+
+```{r, warning=FALSE}
+inTrain <- createDataPartition(y=spam$type, p=0.75, list=FALSE)
+training <- spam[inTrain,]
+testing <- spam[-inTrain,]
+dim(training)
+set.seed(32343)
+modelFit <- train(type ~., data = training, method="glm")
+args(train.default)
+#needs trainControls()
+```
+
+##Continous outcomes:  
+
+* RMSE = Root Mean Squared Error
+* RSquared = R^2 from regression models
+
+##Categorical outcomes:  
+
+* Accurcy - Fraction correct
+* Kappa - A measure of concordance
+
+##`trainControl` resampling
+
+* `method`
+
+    * boot = bootstrapping
+    * boot632 = bootstrapping with adjustment
+    * cv = cross validation
+    * repeatedcv = repeated cross validation
+    * LOOCV = leave one out cross validation
+
+* `number`
+    
+    * For boot/cross validation
+    * Number of subsamples to take
+    
+* `repeats`
+
+    * Number of times to repeate subsampling
+    * if big this can slow things down
+
+###Setting the seed
+
+* it is often useful to set an overall seed
+* you can also set a seed for each resample
+* seeding each resample is useful for parallel fits
+
+
