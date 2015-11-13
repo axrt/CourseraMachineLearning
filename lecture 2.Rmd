@@ -285,4 +285,184 @@ predict(bsBasis, age=testing$age)
 * If you want tot fit spline models, use the `gam` method in the `caret` package which allows smoothing of multiple variables
 * More on feature creation/data tidying in the Obtaining Data course from the Data Science (done already)
 
+#Preprocessing with principle components analysis
+
+```{r, warning=FALSE}
+library(caret)
+library(kernlab)
+data(spam)
+inTrain <- createDataPartition(y=spam$type, p=0.75, list=FALSE)
+training <- spam[inTrain,]
+testing <- spam[-inTrain,]
+
+M<- abs(cor(training[,-58]))
+diag(M) <-0
+which(M>0.8, arr.ind=T)
+names(spam)[c(34, 32)]
+plot(spam[, 34], spam[,32])
+```
+
+##Basic PCA idea
+
+* We might not need every predictor
+* A weighted combination of predictors might be better
+* We should pick this combination to capture the "most information" possible
+* Benefits
+    * Reduced number of predictors
+    * Reduced noise (due to averaging)
+
+```{r, warning=FALSE}
+X<- 0.71*training$num415 + 0.71* training$num857
+Y<- 0.71*training$num415 - 0.71* training$num857
+plot(X, Y)
+```
+
+##Related problems
+
+You have multivariate X1 ... Xn so X1=(X11 ... Xm)
+
+* Find a new set of multivariate variables that are uncorrelated and explain as much variace as possible
+* If you put all the variables together in one matrix, find the best matrix created with fewer varibales (lower rank) that explains the original data
+
+The first goal is statistical and the second is data compression
+
+###SVD
+
+If X is a matrix with each variable in a column and each observation is a row then the SVD is a "matrix decompression"
+
+X=UDV#T
+
+where the column of U are orthogonal (left singular vectors), the columns of V are orthogonal (right singular vectors) and D is a diagonal matrix (singular values)
+
+###PCA
+
+The principal components are equal to the right singular values if you first scale (substract the mean, devide by standard deviation) the variables.
+
+```{r, warning=FALSE}
+smallSpam <- spam[,c(34, 32)]
+prComp<- prcomp(smallSpam)
+plot(prComp$x[,1], prComp$x[,2])
+prComp$rotation
+
+typeColor <- ((spam$type=="spam")*1+1)
+prComp<- prcomp(log10(spam[,-58]+1))
+plot(prComp$x[,1], prComp$x[,2], col=typeColor, xlab="PC1", ylab="PC2")
+
+preProc <- preProcess(log10(spam[,-58]+1), method="pca", pcaComp = 2)
+spamPC <- predict(preProc, log10(spam[,-58]+1))
+plot(spamPC[, 1], spamPC[,2], col=typeColor)
+trainPC <- predict(preProc, log10(training[, -58]+1))
+modelFit<- train(training$type ~., method="glm", data=trainPC)
+testPC<- predict(preProc, log10(testing[, -58]+1))
+confusionMatrix(testing$type, predict(modelFit, testPC))
+
+modelFit<- train(training$type ~., method="glm", preProcess="pca", data=training)
+confusionMatrix(testing$type, predict(modelFit, testing))
+```
+
+* Most useful for linear-type models
+* Can make it harder to interpret predictors
+* Watch for ouliers!
+    * Transform first (with logs/BoxCox)
+    * Plot predictors to identify problems
+For more see the "Elements of Statistical Learning" (have started reading, stopped at logistic regression)
+
+#Predicting with regression
+
+* fit a simple model
+* plug in new covariates and multiply by the coefficients
+* useful when the linear model is (nearly correct)
+
+Pros: 
+
+* Easy to implement
+* Easy to interpret
+
+Cons:
+
+* Often poor performance in nonlinear settings
+
+```{r, warning=FALSE}
+library(caret)
+data("faithful")
+set.seed(333)
+
+inTrain<- createDataPartition(y=faithful$waiting, p=0.5, list=FALSE)
+trainFaith<- faithful[inTrain,]
+testFaith<- faithful[-inTrain,]
+head(trainFaith)
+
+plot(trainFaith$waiting, trainFaith$eruptions, pch=19, col="blue", xlab="Waiting", ylab="Duration")
+
+lm1<- lm(eruptions ~ waiting, data=trainFaith)
+summary(lm1)
+lines(trainFaith$waiting, lm1$fitted.values, lwd=3)
+coef(lm1)[1] + coef(lm1)[2]*0.8
+newdata<- data.frame(waiting=80)
+predict(lm1, newdata)
+
+par(mfrow=c(1,2))
+plot(trainFaith$waiting, trainFaith$eruptions, pch=19, col="blue", xlab="Waiting", ylab="Duration")
+lines(trainFaith$waiting, predict(lm1), lwd=3)
+plot(testFaith$waiting, testFaith$eruptions,pch=19, col="blue", xlab="Waiting", ylab="Duration")
+lines(testFaith$waiting, predict(lm1, newdata=testFaith), lwd=3)
+sqrt(sum((lm1$fitted-trainFaith$eruptions)^2))
+sqrt(sum((predict(lm1, newdata=testFaith)-testFaith$eruptions)^2))
+
+pred1 <- predict(lm1, newdata = testFaith, interval="prediction")
+ord<- order(testFaith$waiting)
+plot(testFaith$waiting, testFaith$eruptions, pch=19, col="blue")
+matlines(testFaith$waiting[ord], pred1[ord,], type="l", col=c(1,2,2), lty=c(1,1,1), lwd=3)
+
+modFit<- train(eruptions~waiting, data=trainFaith, method="lm")
+summary(modFit$finalModel)
+```
+
+* Regression models with multiple covariates can be included
+* Often useful in combination with other models
+
+#Prediction with regression, multiple covariates
+
+```{r, warning=FALSE}
+library(ISLR)
+library(ggplot2)
+library(caret)
+data("Wage")
+Wage<- subset(Wage, select=-c(logwage))
+summary(Wage)
+
+inTrain <- createDataPartition(y=Wage$wage, p=0.7, list=FALSE)
+training<- Wage[inTrain,]
+testing<- Wage[-inTrain,]
+dim(training)
+dim(testing)
+
+featurePlot(x=training[, c("age", "education", "jobclass")],
+            y=training$wage, plot="pairs")
+
+qplot(age, wage, data=training)
+qplot(age, wage, colour=jobclass, data=training)
+qplot(age, wage, colour=education, data=training)
+
+modFit<- train(wage~age+jobclass+education, method="lm", data=training)
+finMod<- modFit$finalModel
+print(modFit)
+plot(finMod, 1, pch=19, cex=0.5, col="#00000010")
+qplot(finMod$fitted.values, finMod$residuals, colour=race, data=training)
+plot(finMod$residuals, pch=19) #some variables are missing from the model and/or data
+pred<- predict(modFit, testing)
+qplot(wage, pred, colour=year, data=testing)
+
+modFitAll<- train(wage~., data=training, method="lm")
+pred<- predict(modFitAll, testing)
+qplot(wage, pred, data=testing)
+```
+
+* Often use in combination with other models
+* Read stuff on the above
+
+
+
+
+
 
