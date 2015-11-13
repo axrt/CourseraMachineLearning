@@ -1,0 +1,78 @@
+---
+title: "Quiz 2"
+author: "Alexander Tuzhikov"
+date: "November 13, 2015"
+output: 
+  html_document: 
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 12
+    highlight: haddock
+    keep_md: yes
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+---
+
+```{r question 1}
+library(AppliedPredictiveModeling)
+library(caret)
+data(AlzheimerDisease)
+
+adData <- data.frame(diagnosis, predictors)
+trainIndex <- createDataPartition(diagnosis, p=0.5, list=FALSE)
+training<- adData[trainIndex,]
+testing<- adData[-trainIndex,]
+dim(training)
+dim(testing)
+```
+
+```{r question 2}
+library(AppliedPredictiveModeling)
+data(concrete)
+library(caret)
+set.seed(1000)
+inTrain = createDataPartition(mixtures$CompressiveStrength, p = 3/4)[[1]]
+training = mixtures[ inTrain,]
+testing = mixtures[-inTrain,]
+library(ggplot2)
+qplot(data=concrete, x=Superplasticizer, geom="histogram")
+qplot(data=concrete, x=log10(Superplasticizer), geom="histogram")
+summary(log10(concrete$Superplasticizer))
+```
+
+```{r question 3}
+library(caret)
+library(AppliedPredictiveModeling)
+set.seed(3433)
+data(AlzheimerDisease)
+adData = data.frame(diagnosis,predictors)
+inTrain = createDataPartition(adData$diagnosis, p = 3/4)[[1]]
+training = adData[ inTrain,]
+testing = adData[-inTrain,]
+
+trainingIL<- training[,grepl(x=colnames(training), pattern="\\bIL|diagnosis", fixed=FALSE, perl=TRUE)]
+colnames(trainingIL)
+pca<-preProcess(x = trainingIL, method = "pca", thresh=0.8)
+pca
+```
+
+```{r question 4}
+library(caret)
+library(AppliedPredictiveModeling)
+set.seed(3433)
+data(AlzheimerDisease)
+adData = data.frame(diagnosis,predictors)
+inTrain = createDataPartition(adData$diagnosis, p = 3/4)[[1]]
+training = adData[ inTrain,]
+testing = adData[-inTrain,]
+
+trainingIL<- training[,grepl(x=colnames(training), pattern="\\bIL|diagnosis", fixed=FALSE, perl=TRUE)]
+colnames(trainingIL)
+pca<-preProcess(x = trainingIL, method = "pca", thresh=0.8)
+fit<-train(diagnosis~., method="glm", data=trainingIL)
+confusionMatrix(predict(fit, newdata=testing), testing$diagnosis)
+fit<- train(diagnosis~.,preProcess="pca", method="glm", data=trainingIL)
+confusionMatrix(predict(fit, newdata=testing), testing$diagnosis)
+
+```
