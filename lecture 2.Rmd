@@ -114,4 +114,175 @@ args(train.default)
 * you can also set a seed for each resample
 * seeding each resample is useful for parallel fits
 
+#Plotting predictors
+
+```{r, warning=FALSE}
+library(ISLR)
+library(ggplot2)
+library(caret)
+data(Wage)
+summary(Wage)
+inTrain <- createDataPartition(y=Wage$wage, p=0.7, list=FALSE)
+training<- Wage[inTrain,]
+testing<- Wage[-inTrain,]
+dim(training)
+dim(testing)
+featurePlot(x=training[,c("age", "education", "jobclass")], y=training$wage, plot="pairs")
+qplot(age, wage, data=training)
+qplot(age, wage, colour=jobclass, data=training)
+qplot(age, wage, colour=education, data=training) + geom_smooth(method="lm", formula=y~x)
+library(Hmisc)
+library(pander)
+cutWage<- cut2(training$wage, g=3)
+pander(table(cutWage))
+q1<- qplot(cutWage, age, data=training, fill=cutWage, geom=c("boxplot"))
+q2<- qplot(cutWage, age, data=training, fill=cutWage, geom=c("boxplot", "jitter"))
+library(grid)
+library(gridExtra)
+grid.arrange(q1, q2, ncol=2)
+
+t1<- table(cutWage, training$jobclass)
+pander(t1)
+pander(prop.table(t1,1))#proportion in each row, 2 would have been column
+qplot(wage, colour=education, data=training, geom="density")
+```
+
+##Notes
+
+* Make your plots only in trainig set
+    * don't use the test set for exploration!
+* Things you should be looking for 
+    * imbalance in outcomes/predictors
+    * outliers
+    * groups of points not explained by a predictor
+    * skewed variables
+
+#Preprocessing
+
+```{r, warning=FALSE}
+library(caret)
+library(kernlab)
+data("spam")
+inTrain <- createDataPartition(y=spam$type, p=0.75, list=FALSE)
+training <- spam[inTrain,]
+testing <- spam[-inTrain,]
+hist(training$capitalAve, main = "", xlab = "ave. capital run length")
+mean(training$capitalAve)
+sd(training$capitalAve)
+trainCapAve <- training$capitalAve
+trainCapAveS <- (trainCapAve - mean(trainCapAve))/sd(trainCapAve)
+mean(trainCapAveS)
+sd(trainCapAveS)
+preObj<- preProcess(training[, -58], method = c("center", "scale"))
+trainCapAveS<- predict(preObj, training[-58])$capitalAve
+testCapAveS <- predict(preObj, testing[,-58])$capitalAve
+mean(testCapAveS)
+sd(testCapAveS)
+set.seed(32343)
+modelFit<- train(type ~., data=training,
+                 preProcess=c("center","scale"),
+                 method="glm")
+modelFit
+#removing suspiciously variable or very volatile predictors
+preObj<- preProcess(training[,-58], method = c("BoxCox"))
+trainCapAveS <- predict(preObj, training[,-58])$capitalAve
+par(mfrow=c(1,2))
+hist(trainCapAveS)
+qqnorm(trainCapAveS)
+
+set.seed(13343)
+#Make some values NA
+training$capAve<- training$capitalAve
+selectNA<- rbinom(dim(training)[1], size=1, prob=0.05)==1
+training$capAve[selectNA]<- NA
+
+#Impute and standardize
+preObj<- preProcess(training[,-58], method="knnImpute")
+capAve<- predict(preObj, training[,-58])$capAve
+
+#Standardize true values
+capAveTruth <- training$capitalAve
+capAveTruth <- (capAveTruth-mean(capAveTruth))/sd(capAveTruth)
+```
+
+* Traning and tests must be processed in the same way
+* Test transformations will likely be imperfect
+    * especially if the test/training sets collected at different times
+* Careful when transforming factor varibles!
+
+#Covariate creation
+
+1. Level 1: From raw data to covariate
+2. Level 2: Transforming tidy covariates
+
+
+```{r, warning=FALSE}
+library(kernlab)
+data(spam)
+spam$capitalAveSq<- spam$capitalAve^2
+```
+
+##Level 1, Raw data -> covariates
+
+* Depends heavily on an application
+* The balancing act is summarization vs. infromation loss
+* Examples:
+    * text files: frequency of words, frequency of phrases (Google ngrams), frequency of capital letters.
+    * images: edges, corners, blobs, ridges (computer vision, feature detection)
+    * webpages: number and type of images, position of elements, colors, videos (A/B Testing)
+* The more knowledge of the system you have the better the job you will do.
+* When in doubt, err on the side of more features
+* Can be automated, but use caution!
+
+##Level 2, Tidy covariates -> new covariates
+
+* More necessary for some methods (regression, svms) that for others (classification trees)
+* Should be done *only* on the training set
+* The best approach is through exploratory analysis (plotting and tables)
+* New covariates should be added to data frames
+
+```{r, warning=FALSE}
+library(ISLR)
+library(caret)
+data("Wage")
+inTrain<- createDataPartition(y=Wage$wage, p=0.7, list=FALSE)
+training<- Wage[inTrain,]
+testing<- Wage[-inTrain,]
+```
+
+Basic idea is to turn factor variables into indicator variables.
+
+```{r, warning=FALSE}
+table(training$jobclass)
+dummies<- dummyVars(wage ~ jobclass, data=training)
+head(predict(dummies, newdata=training))
+
+nsv<- nearZeroVar(training, saveMetrics = TRUE)
+nsv
+
+library(splines)
+bsBasis <- bs(training$age, df=3)
+bsBasis
+
+lm1<- lm(wage ~ bsBasis, data=training)
+plot(training$age, training$wage, pch=19, cex=0.5)
+points(training$age, predict(lm1, newdata=training), col="red", pch=19, cex=0.5)
+
+predict(bsBasis, age=testing$age)
+```
+##Notes and further reading
+
+* Level 1 frature creation (raw data to covariates)
+    * Science is key. Google "feature extraction for [data type]"
+    * Err on overcreation of features
+    * in some applications (images, voices) automated feature creation is possible/necessary
+    * *that link from the lecture*
+* Level 2 feature creation (covariates to new covariates)
+    * The function `preProcess` in `caret` will handle some preprocessing
+    * Create new covariates if you think they will improve the fit
+    * Use exploratory analysis on the training set for creating them
+    * Be careful about overfitting!
+* If you want tot fit spline models, use the `gam` method in the `caret` package which allows smoothing of multiple variables
+* More on feature creation/data tidying in the Obtaining Data course from the Data Science (done already)
+
 
