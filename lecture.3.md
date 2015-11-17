@@ -100,11 +100,11 @@ print(modFit$finalModel)
 ## node), split, n, loss, yval, (yprob)
 ##       * denotes terminal node
 ## 
-## 1) root 105 70 setosa (0.33333333 0.33333333 0.33333333)  
-##   2) Petal.Length< 2.6 35  0 setosa (1.00000000 0.00000000 0.00000000) *
-##   3) Petal.Length>=2.6 70 35 versicolor (0.00000000 0.50000000 0.50000000)  
-##     6) Petal.Width< 1.75 36  2 versicolor (0.00000000 0.94444444 0.05555556) *
-##     7) Petal.Width>=1.75 34  1 virginica (0.00000000 0.02941176 0.97058824) *
+## 1) root 105 70 setosa (0.3333333 0.3333333 0.3333333)  
+##   2) Petal.Length< 2.35 35  0 setosa (1.0000000 0.0000000 0.0000000) *
+##   3) Petal.Length>=2.35 70 35 versicolor (0.0000000 0.5000000 0.5000000)  
+##     6) Petal.Width< 1.75 38  4 versicolor (0.0000000 0.8947368 0.1052632) *
+##     7) Petal.Width>=1.75 32  1 virginica (0.0000000 0.0312500 0.9687500) *
 ```
 
 ```r
@@ -136,8 +136,8 @@ predict(modFit, newdata=testing)
 ## [13] setosa     setosa     setosa     versicolor versicolor versicolor
 ## [19] versicolor versicolor versicolor versicolor versicolor versicolor
 ## [25] versicolor versicolor versicolor versicolor versicolor versicolor
-## [31] virginica  versicolor virginica  virginica  virginica  virginica 
-## [37] virginica  versicolor virginica  virginica  virginica  versicolor
+## [31] virginica  virginica  virginica  virginica  virginica  virginica 
+## [37] versicolor virginica  virginica  virginica  virginica  virginica 
 ## [43] virginica  virginica  virginica 
 ## Levels: setosa versicolor virginica
 ```
@@ -310,12 +310,12 @@ modFit
 ## Resampling results across tuning parameters:
 ## 
 ##   mtry  Accuracy   Kappa      Accuracy SD  Kappa SD  
-##   2     0.9727705  0.9587258  0.03191084   0.04814487
-##   3     0.9727705  0.9587258  0.03191084   0.04814487
-##   4     0.9674701  0.9504990  0.03483461   0.05269210
+##   2     0.9629572  0.9436810  0.03491130   0.05259170
+##   3     0.9639829  0.9452891  0.03405705   0.05117056
+##   4     0.9617573  0.9418867  0.03694159   0.05565854
 ## 
 ## Accuracy was used to select the optimal model using  the largest value.
-## The final value used for the model was mtry = 2.
+## The final value used for the model was mtry = 3.
 ```
 
 ```r
@@ -324,15 +324,15 @@ getTree(modFit$finalModel,k=2)
 
 ```
 ##    left daughter right daughter split var split point status prediction
-## 1              2              3         4        0.80      1          0
+## 1              2              3         3        2.60      1          0
 ## 2              0              0         0        0.00     -1          1
-## 3              4              5         3        4.95      1          0
-## 4              6              7         1        5.95      1          0
+## 3              4              5         4        1.65      1          0
+## 4              6              7         1        7.05      1          0
 ## 5              0              0         0        0.00     -1          3
-## 6              0              0         0        0.00     -1          2
-## 7              8              9         3        4.75      1          0
+## 6              8              9         3        5.00      1          0
+## 7              0              0         0        0.00     -1          3
 ## 8              0              0         0        0.00     -1          2
-## 9             10             11         4        1.65      1          0
+## 9             10             11         1        6.15      1          0
 ## 10             0              0         0        0.00     -1          2
 ## 11             0              0         0        0.00     -1          3
 ```
@@ -357,8 +357,8 @@ table(pred, testing$Species)
 ##             
 ## pred         setosa versicolor virginica
 ##   setosa         15          0         0
-##   versicolor      0         12         1
-##   virginica       0          3        14
+##   versicolor      0         13         1
+##   virginica       0          2        14
 ```
 
 ```r
@@ -458,22 +458,22 @@ modFit
 ## Resampling results across tuning parameters:
 ## 
 ##   interaction.depth  n.trees  RMSE      Rsquared   RMSE SD   Rsquared SD
-##   1                   50      35.91571  0.3136207  1.452097  0.02754667 
-##   1                  100      35.31962  0.3227640  1.423374  0.02720354 
-##   1                  150      35.25734  0.3232700  1.411480  0.02661931 
-##   2                   50      35.29897  0.3251593  1.456077  0.02933924 
-##   2                  100      35.19295  0.3255099  1.412053  0.02887486 
-##   2                  150      35.27406  0.3224776  1.414362  0.02946827 
-##   3                   50      35.17050  0.3276161  1.461187  0.02988218 
-##   3                  100      35.27901  0.3228014  1.409451  0.03015910 
-##   3                  150      35.43579  0.3176886  1.405230  0.02999237 
+##   1                   50      34.12745  0.3184700  1.294873  0.02437081 
+##   1                  100      33.63671  0.3285735  1.267279  0.02447841 
+##   1                  150      33.59487  0.3294781  1.246401  0.02407989 
+##   2                   50      33.59811  0.3314369  1.289541  0.02584455 
+##   2                  100      33.50160  0.3336574  1.244714  0.02555678 
+##   2                  150      33.56847  0.3316295  1.208047  0.02570789 
+##   3                   50      33.50423  0.3334369  1.245593  0.02559306 
+##   3                  100      33.64859  0.3287606  1.163685  0.02515299 
+##   3                  150      33.83100  0.3232214  1.147706  0.02488924 
 ## 
 ## Tuning parameter 'shrinkage' was held constant at a value of 0.1
 ## 
 ## Tuning parameter 'n.minobsinnode' was held constant at a value of 10
 ## RMSE was used to select the optimal model using  the smallest value.
-## The final values used for the model were n.trees = 50, interaction.depth
-##  = 3, shrinkage = 0.1 and n.minobsinnode = 10.
+## The final values used for the model were n.trees = 100,
+##  interaction.depth = 2, shrinkage = 0.1 and n.minobsinnode = 10.
 ```
 
 ```r
@@ -485,3 +485,92 @@ qplot(predict(modFit, testing), wage, data=testing)
 * Ron Meir
 * Freund and Shapire
 * Slides
+
+#Model based prediction
+
+1. Assume that the data follow a probabilistic model
+2. Use Bayes' theorem to identify optimal classifiers
+
+##Pros
+
+* Can take advantage of the structure of the data
+* May be computationally convinient
+* Are reasonably accurate on real problems
+
+##Cons
+
+* Make additional assumptions about the data
+* When the model is incorrect you may get reduced accuracy
+
+A range of models use this approach
+
+* Linear discriminant analysis assumes fk(x) is multivariate Gaussian with same covariances
+* Quadratic discriminant alanysys assumes fk(x) is multivariate Gaussian with different covariances
+* Model based prediction assumes more complicated version for the covariance matrix
+* Naive Bayes assumes independence between features for model building
+
+
+```r
+data(iris)
+library(ggplot2)
+names(iris)
+```
+
+```
+## [1] "Sepal.Length" "Sepal.Width"  "Petal.Length" "Petal.Width" 
+## [5] "Species"
+```
+
+```r
+table(iris$Species)
+```
+
+```
+## 
+##     setosa versicolor  virginica 
+##         50         50         50
+```
+
+```r
+inTrain<- createDataPartition(y=iris$Species, p=0.7, list=FALSE)
+
+training<- iris[inTrain,]
+testing<- iris[-inTrain,]
+
+modlda<- train(Species ~., data=training, method="lda")
+```
+
+```
+## Loading required package: MASS
+```
+
+```r
+modnb <- train(Species ~., data=training, method="nb")
+```
+
+```
+## Loading required package: klaR
+```
+
+```r
+plda <- predict(modlda, testing)
+pnb<- predict(modnb, testing)
+table(plda, pnb)
+```
+
+```
+##             pnb
+## plda         setosa versicolor virginica
+##   setosa         15          0         0
+##   versicolor      0         15         0
+##   virginica       0          0        15
+```
+
+```r
+equalPredictions <- (plda==pnb)
+qplot(Petal.Width, Sepal.Width, colour=equalPredictions, data=testing)
+```
+
+![](lecture.3_files/figure-html/unnamed-chunk-7-1.png) 
+
+Read wikipedia and the books
