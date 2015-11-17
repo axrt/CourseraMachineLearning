@@ -101,10 +101,10 @@ print(modFit$finalModel)
 ##       * denotes terminal node
 ## 
 ## 1) root 105 70 setosa (0.33333333 0.33333333 0.33333333)  
-##   2) Petal.Length< 2.6 35  0 setosa (1.00000000 0.00000000 0.00000000) *
-##   3) Petal.Length>=2.6 70 35 versicolor (0.00000000 0.50000000 0.50000000)  
-##     6) Petal.Length< 4.85 34  1 versicolor (0.00000000 0.97058824 0.02941176) *
-##     7) Petal.Length>=4.85 36  2 virginica (0.00000000 0.05555556 0.94444444) *
+##   2) Petal.Length< 2.45 35  0 setosa (1.00000000 0.00000000 0.00000000) *
+##   3) Petal.Length>=2.45 70 35 versicolor (0.00000000 0.50000000 0.50000000)  
+##     6) Petal.Length< 5.05 38  3 versicolor (0.00000000 0.92105263 0.07894737) *
+##     7) Petal.Length>=5.05 32  0 virginica (0.00000000 0.00000000 1.00000000) *
 ```
 
 ```r
@@ -134,11 +134,11 @@ predict(modFit, newdata=testing)
 ##  [1] setosa     setosa     setosa     setosa     setosa     setosa    
 ##  [7] setosa     setosa     setosa     setosa     setosa     setosa    
 ## [13] setosa     setosa     setosa     versicolor versicolor versicolor
-## [19] versicolor virginica  versicolor versicolor versicolor versicolor
+## [19] versicolor versicolor versicolor versicolor versicolor versicolor
 ## [25] virginica  versicolor versicolor versicolor versicolor versicolor
-## [31] virginica  virginica  virginica  versicolor virginica  virginica 
-## [37] virginica  virginica  virginica  virginica  virginica  virginica 
-## [43] virginica  virginica  versicolor
+## [31] virginica  virginica  versicolor virginica  virginica  versicolor
+## [37] virginica  versicolor versicolor virginica  versicolor versicolor
+## [43] virginica  virginica  virginica 
 ## Levels: setosa versicolor virginica
 ```
 
@@ -256,3 +256,119 @@ ctreeBag$fit
 * Several models use bagging in `caret`'s `train` function
 
 Read the links about Bagging and Boosting
+
+#Random Forests
+
+1. Bootstrap samples
+2. At each split, bootstrap variables
+3. Grow multiple trees and vote
+
+##Pros
+
+1. Accuracy
+
+##Cons
+
+1. Speed
+2. Interpretability
+3. Overfitting
+
+
+```r
+data(iris)
+library(ggplot2)
+
+inTrain<- createDataPartition(y=iris$Species, p=0.7, list=FALSE)
+
+training<- iris[inTrain,]
+testing<- iris
+
+library(caret)
+library(randomForest)
+```
+
+```
+## randomForest 4.6-12
+## Type rfNews() to see new features/changes/bug fixes.
+```
+
+```r
+modFit <- train(Species~.,data=training, method="rf", prox=TRUE)
+modFit
+```
+
+```
+## Random Forest 
+## 
+## 105 samples
+##   4 predictor
+##   3 classes: 'setosa', 'versicolor', 'virginica' 
+## 
+## No pre-processing
+## Resampling: Bootstrapped (25 reps) 
+## Summary of sample sizes: 105, 105, 105, 105, 105, 105, ... 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa      Accuracy SD  Kappa SD  
+##   2     0.9411170  0.9100899  0.02829537   0.04324343
+##   3     0.9430682  0.9131187  0.02807411   0.04276924
+##   4     0.9437110  0.9141111  0.02431674   0.03708518
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 4.
+```
+
+```r
+getTree(modFit$finalModel,k=2)
+```
+
+```
+##    left daughter right daughter split var split point status prediction
+## 1              2              3         3        2.45      1          0
+## 2              0              0         0        0.00     -1          1
+## 3              4              5         4        1.75      1          0
+## 4              6              7         3        5.35      1          0
+## 5              0              0         0        0.00     -1          3
+## 6              8              9         3        4.95      1          0
+## 7              0              0         0        0.00     -1          3
+## 8              0              0         0        0.00     -1          2
+## 9             10             11         2        2.45      1          0
+## 10             0              0         0        0.00     -1          3
+## 11             0              0         0        0.00     -1          2
+```
+
+```r
+irisP <- classCenter(training[, c(3,4)], training$Species, modFit$finalModel$prox)
+irisP<- as.data.frame(irisP)
+irisP$Species<- rownames(irisP)
+p<- qplot(Petal.Width, Petal.Length, col=Species, data=training)
+p+ geom_point(aes(x=Petal.Width, y=Petal.Length, col=Species), size=5, shape=4, data=irisP)
+```
+
+![](lecture.3_files/figure-html/unnamed-chunk-5-1.png) 
+
+```r
+pred<- predict(modFit, testing)
+testing$predRight<- pred==testing$Species
+table(pred, testing$Species)
+```
+
+```
+##             
+## pred         setosa versicolor virginica
+##   setosa         50          0         0
+##   versicolor      0         49         1
+##   virginica       0          1        49
+```
+
+```r
+qplot(Petal.Width, Petal.Length, colour=predRight, data=testing, main = "newdata Predictions")
+```
+
+![](lecture.3_files/figure-html/unnamed-chunk-5-2.png) 
+
+##Notes
+
+* Random forests are usually one of the two top performing algorithms along with boosting in prediction contests
+* Random forests are diffictult to interpret but often very accurate
+* Care should be taken to avoid overfitting (see `rfcv`) function
