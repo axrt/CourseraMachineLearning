@@ -6,7 +6,7 @@ November 18, 2015
 
 #Syllabus
 
-The traditional view on activity recognition has been primarily focused on which activity was performed, but not how well it was performed. A group led by Eduardo Velloso at the Lancaster University has designed [a study](http://groupware.les.inf.puc-rio.br/work.jsf?p1=11201) and generated a vast ammount of data from sprots gadgest such as Jawbone Up, Nike FuelBand, and Fitbit. A part of this data, made available will be studied below. Data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants will be evaluated and we will see if a good predictive model might be built, which would be able to tell if a certain excercise was performed well or inaccurately.
+The traditional view on activity recognition has been primarily focused on which activity was performed, but not how well it was performed. A group led by Eduardo Velloso at the Lancaster University has designed [a study](http://groupware.les.inf.puc-rio.br/work.jsf?p1=11201) and generated a vast amount of data from sports gadgets such as Jawbone Up, Nike FuelBand, and Fitbit. A part of this data, made available will be studied below. Data from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants will be evaluated and we will see if a good predictive model might be built, which would be able to tell if a certain exercise was performed well or inaccurately.
 
 #Data Sources
 
@@ -88,7 +88,7 @@ testing.data[,c(setdiff(colnames(training.data), "classe"))] -> testing.data
 
 #Exploratory Analysis
 
-The remaing variable list is too large to list out, so I will go directly to PCA.
+The remaining variable list is too large to list out, so I will go directly to PCA.
 
 
 ```r
@@ -195,7 +195,7 @@ confusionMatrix(predict(rf.model, mytesting.data), mytesting.data$classe)
 ## Balanced Accuracy      0.9993   0.9976   0.9985   0.9983   0.9994
 ```
 
-Well, as they told us in the lecture, random forest model seems to be the mose accurate. We can now predict the test set with the best two models:
+Well, as they told us in the lecture, random forest model seems to be the most accurate. We can now predict the test set with the best two models:
 
 
 ```r
@@ -263,6 +263,7 @@ Apparently the models fully agree.
 
 #Conclusions
 
+Well.., apparently, random forest is the best, though the slowest model to fit. Despite that, in an independent study we have investigated and proved the proposed principle: the massive amount of data, gathered from fitness equipment, may be successfully used to analyze the quality of physical exercises performed.
 
 #Saving Output For Submission
 
